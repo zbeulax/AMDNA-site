@@ -1,0 +1,39 @@
+# ==========================================================
+# Ping automatique quotidien vers Supabase, pour empêcher la
+# mise en pause du projet gratuit après 7 jours d'inactivité.
+# ==========================================================
+# À utiliser SEULEMENT si UptimeRobot (méthode simple, voir
+# SETUP.md) ne permet pas d'ajouter l'en-tête "apikey" sur ton
+# compte gratuit. Cette méthode demande un compte GitHub gratuit.
+#
+# Mise en route :
+# 1. Crée un dépôt GitHub (public ou privé), pousse ce dossier
+#    dedans (ce fichier doit rester dans .github/workflows/).
+# 2. Dans le dépôt : Settings → Secrets and variables → Actions
+#    → New repository secret. Crée-en deux :
+#      SUPABASE_URL   = ton "Project URL" (Supabase → Settings → API)
+#      SUPABASE_ANON_KEY = ta clé "anon public" (même page)
+# 3. Onglet "Actions" du dépôt → autorise les workflows si demandé.
+# 4. C'est tout : ça tourne automatiquement chaque jour à minuit UTC.
+#    Tu peux aussi le lancer manuellement depuis l'onglet Actions
+#    ("Run workflow") pour tester tout de suite.
+# ==========================================================
+
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # tous les jours à minuit UTC
+  workflow_dispatch:        # permet de lancer le test manuellement
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/blocked_dates?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+            
