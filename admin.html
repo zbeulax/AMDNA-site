@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>AMDNA — Espace pro</title>
+  <link rel="icon" href="assets/amDNA-logo.png">
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <img src="assets/amDNA-logo.png" alt="AMDNA" class="login-logo">
+      <p class="eyebrow">ESPACE PRO</p>
+      <h1>Connexion</h1>
+      <form id="loginForm">
+        <label>E-mail<input type="email" id="loginEmail" required autocomplete="username"></label>
+        <label>Mot de passe<input type="password" id="loginPassword" required autocomplete="current-password"></label>
+        <p id="loginError" class="login-error" hidden></p>
+        <button class="btn-primary" type="submit">Se connecter</button>
+      </form>
+      <a href="index.html" class="back-site">← Retour au site</a>
+    </div>
+  </div>
+
+  <div id="dashboard" class="dashboard" hidden>
+    <header class="admin-topbar">
+      <div class="admin-brand"><img src="assets/amDNA-logo.png" alt="AMDNA"><span>Espace pro</span></div>
+      <nav class="admin-tabs">
+        <button class="tab-btn active" data-tab="planning">Planning</button>
+        <button class="tab-btn" data-tab="quotes">Devis</button>
+        <button class="tab-btn" data-tab="reviews">Avis</button>
+        <button class="tab-btn" data-tab="blocked">Dates bloquées</button>
+      </nav>
+      <button class="btn-ghost" id="logoutBtn">Se déconnecter</button>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- ============ PLANNING / RÉSERVATIONS ============ -->
+      <section id="tab-planning" class="tab-panel active">
+        <div class="panel-head">
+          <h2>Réservations</h2>
+          <div class="filter-row">
+            <select id="filterStatus">
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="confirmed">Confirmée</option>
+              <option value="cancelled">Annulée</option>
+            </select>
+            <select id="filterService">
+              <option value="">Nautic & Auto</option>
+              <option value="nautic">Nautic</option>
+              <option value="auto">Auto</option>
+            </select>
+            <button class="btn-ghost small" id="refreshBookings">↻ Rafraîchir</button>
+          </div>
+        </div>
+
+        <div class="week-summary" id="weekSummary"></div>
+
+        <div class="table-wrap">
+          <table id="bookingsTable">
+            <thead>
+              <tr>
+                <th>Date</th><th>Heure</th><th>Service</th><th>Client</th><th>Contact</th><th>Lieu</th><th>Photos</th>
+                <th>Statut</th><th>Paiement</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsBody"></tbody>
+          </table>
+          <p id="bookingsEmpty" class="empty-note" hidden>Aucune réservation pour ce filtre.</p>
+        </div>
+      </section>
+
+      <!-- ============ DEVIS ============ -->
+      <section id="tab-quotes" class="tab-panel">
+        <div class="panel-head"><h2>Créer un devis</h2></div>
+        <div class="quote-layout">
+          <form id="quoteForm" class="quote-form">
+            <div class="form-row">
+              <label>Nom du client<input id="qClientName" required></label>
+              <label>N° de devis<input id="qNumber" placeholder="AUTO"></label>
+            </div>
+            <div class="form-row">
+              <label>E-mail<input id="qClientEmail" type="email"></label>
+              <label>Téléphone<input id="qClientPhone"></label>
+            </div>
+            <label>Adresse<input id="qClientAddress"></label>
+            <label>Prestation
+              <select id="qService"><option value="nautic">Nautic</option><option value="auto">Auto</option></select>
+            </label>
+
+            <div class="items-head">
+              <span>Description</span><span>Qté</span><span>Prix unitaire (€)</span><span></span>
+            </div>
+            <div id="quoteItems"></div>
+            <button type="button" class="btn-ghost small" id="addItem">+ Ajouter une ligne</button>
+
+            <label>Notes / conditions<textarea id="qNotes" rows="3" placeholder="Validité du devis, modalités de paiement..."></textarea></label>
+
+            <div class="quote-total">Total : <strong id="quoteTotal">0,00 €</strong></div>
+
+            <div class="quote-actions">
+              <button type="button" class="btn-ghost" id="saveQuote">Enregistrer</button>
+              <button type="button" class="btn-primary" id="downloadQuote">Télécharger le PDF</button>
+            </div>
+          </form>
+
+          <div class="quote-list">
+            <h3>Devis enregistrés</h3>
+            <div id="quotesHistory"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ AVIS ============ -->
+      <section id="tab-reviews" class="tab-panel">
+        <div class="panel-head"><h2>Avis en attente de validation</h2></div>
+        <div id="pendingReviews" class="reviews-admin-grid"></div>
+        <p id="pendingEmpty" class="empty-note" hidden>Aucun avis en attente.</p>
+
+        <div class="panel-head" style="margin-top:50px"><h2>Avis publiés sur le site</h2></div>
+        <div id="approvedReviews" class="reviews-admin-grid"></div>
+      </section>
+
+      <!-- ============ DATES BLOQUÉES ============ -->
+      <section id="tab-blocked" class="tab-panel">
+        <div class="panel-head"><h2>Bloquer une date</h2></div>
+        <form id="blockForm" class="block-form">
+          <label>Date<input type="date" id="blockDate" required></label>
+          <label>Raison (facultatif)<input id="blockReason" placeholder="Congés, jour férié..."></label>
+          <button class="btn-primary" type="submit">Bloquer cette date</button>
+        </form>
+        <div id="blockedList" class="blocked-list"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="photoViewer" class="photo-viewer" hidden>
+    <div class="photo-viewer-backdrop" id="closePhotoViewer"></div>
+    <div class="photo-viewer-card">
+      <button class="btn-ghost small" id="closePhotoViewerBtn" style="position:absolute;top:16px;right:16px">Fermer ×</button>
+      <h3>Photos envoyées par le client</h3>
+      <div class="photo-viewer-grid" id="photoViewerGrid"></div>
+    </div>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

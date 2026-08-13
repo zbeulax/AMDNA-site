@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06111f">
+  <meta name="description" content="AMDNA — Nautic & Auto Detailing. Expérience premium de nettoyage automobile et nautique sur la Côte d'Azur.">
+  <title>AMDNA — Nautic & Auto Detailing</title>
+  <link rel="preload" as="image" href="assets/amDNA-logo.png">
+  <link rel="icon" href="assets/amDNA-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="loader" class="loader">
+    <img src="assets/amDNA-logo.png" alt="AMDNA">
+    <div class="loader-line"><span></span></div>
+    <p>NAUTIC · AUTO DETAILING</p>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="AMDNA accueil">
+      <img src="assets/amDNA-logo.png" alt="AMDNA">
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="#nautic" class="nav-link">Nautic</a>
+      <a href="#auto" class="nav-link">Auto</a>
+      <button type="button" class="nav-link" id="openContact">Contact</button>
+      <a href="#avis" class="nav-link">Avis</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="location">CÔTE D'AZUR · VAR</span>
+      <button class="menu-btn" type="button" aria-label="Ouvrir le menu" id="menuBtn"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="contact-popup" id="contactPopup" aria-hidden="true">
+    <div class="modal-backdrop close-contact"></div>
+    <div class="contact-card">
+      <button class="close-x close-contact" type="button" aria-label="Fermer">×</button>
+      <p class="eyebrow">AMDNA · CONTACT</p>
+      <h2><span class="nowrap-line">Une question ?</span><br><em>Parlons-en.</em></h2>
+      <p>Notre équipe vous répond dans les plus brefs délais, pour toute demande concernant nos prestations nautic ou auto.</p>
+      <div class="contact-details">
+        <a href="tel:0656734680" class="contact-line"><span>Téléphone</span><strong>06 56 73 46 80</strong></a>
+        <a href="mailto:Angemrt@icloud.com" class="contact-line"><span>E-mail</span><strong>Angemrt@icloud.com</strong></a>
+      </div>
+      <p class="contact-note">Disponibles du lundi au samedi — réponse rapide garantie.</p>
+    </div>
+  </div>
+
+  <main id="top">
+    <div id="yachtScene" class="yacht-scene" aria-hidden="true">
+      <div id="yachtImg" class="yacht-img"></div>
+      <div class="yacht-scene-overlay"></div>
+    </div>
+    <div id="autoScene" class="auto-scene" aria-hidden="true">
+      <div class="auto-img"></div>
+      <div class="auto-scene-overlay"></div>
+    </div>
+
+    <section class="hero scene-section">
+      <div class="hero-copy">
+        <p class="eyebrow" data-reveal>AMDNA · PREMIUM DETAILING</p>
+        <h1 data-reveal>L'art du détail,<br><em>sur terre & sur mer.</em></h1>
+        <p class="hero-sub" data-reveal>Une expérience de detailing pensée pour les véhicules et les yachts qui méritent plus qu'un simple nettoyage.</p>
+        <a class="scroll-cue" href="#nautic"><span class="scroll-dot"></span><span>Descendre pour entrer</span></a>
+      </div>
+    </section>
+
+    <section id="nautic" class="nautic scene-section">
+      <div class="section-copy left">
+        <p class="eyebrow" data-reveal>01 · NAUTIC</p>
+        <h2 data-reveal>La Méditerranée<br><em>comme terrain de jeu.</em></h2>
+        <p data-reveal>Nettoyage, soin et finition premium pour yachts, bateaux et jet-skis. Votre bateau retrouve son éclat, jusque dans les moindres détails.</p>
+      </div>
+      <div class="scroll-word">NAUTIC</div>
+      <div class="boat-labels">
+        <span>SOIN</span>
+        <span>ÉCLAT</span>
+        <span>PROTECTION</span>
+      </div>
+    </section>
+
+    <section class="nautic-cta content-section">
+      <div class="glass-card" data-reveal>
+        <p class="eyebrow">VOTRE BATEAU</p>
+        <h2>Préparer<br><em>votre prochaine sortie.</em></h2>
+        <p>Demandez votre devis ou réservez une visite préalable directement en ligne.</p>
+        <button class="pill-button open-booking" data-service="nautic">Réserver un nettoyage nautic <span>↗</span></button>
+      </div>
+    </section>
+
+    <section class="transition-section content-section">
+      <p class="eyebrow" data-reveal>02 · AMDNA</p>
+      <h2 data-reveal>Du large<br><em>à la route.</em></h2>
+      <p data-reveal>La même exigence. Un autre terrain.</p>
+    </section>
+
+    <section id="auto" class="auto scene-section">
+      <div class="auto-intro">
+        <p class="eyebrow" data-reveal>03 · AUTO</p>
+        <h2 data-reveal>La route<br><em>comme terrain de jeu.</em></h2>
+        <p data-reveal>Nettoyage, soin et finition premium pour citadines, berlines et SUV. Votre véhicule retrouve son éclat, jusque dans les moindres détails.</p>
+      </div>
+      <div class="scroll-word auto-scroll-word">AUTO</div>
+      <div class="car-labels">
+        <span>PRÉCISION</span>
+        <span>FINITION</span>
+        <span>PROTECTION</span>
+      </div>
+    </section>
+
+    <section class="auto-cta content-section">
+      <div class="glass-card" data-reveal>
+        <p class="eyebrow">AUTO DETAILING</p>
+        <h2>Découvrez<br><em>les prestations.</em></h2>
+        <p>Extérieur, intérieur, protections et suppléments : retrouvez l'offre complète AMDNA.</p>
+        <div class="cta-actions">
+          <a class="pill-button" href="#services">Voir les prestations <span>↘</span></a>
+          <button class="pill-button open-booking" data-service="auto">Réserver un nettoyage auto <span>↗</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="services content-section">
+      <div class="section-heading" data-reveal>
+        <p class="eyebrow">04 · PRESTATIONS</p>
+        <h2>Un résultat qui<br><em>se voit.</em></h2>
+        <div class="carousel-nav">
+          <button type="button" class="carousel-arrow" id="servicesPrev" aria-label="Prestation précédente">‹</button>
+          <button type="button" class="carousel-arrow" id="servicesNext" aria-label="Prestation suivante">›</button>
+        </div>
+      </div>
+      <div class="service-grid" id="serviceGrid">
+        <article class="service-card highlight-hover" data-reveal>
+          <span class="num-highlight">01</span>
+          <h3 class="service-title" data-open-service="exterieur">Lavage extérieur</h3>
+          <p>Le service de lavage extérieur commence par un nettoyage minutieux des jantes, suivi d'un démoustiquage complet de la carrosserie. <button type="button" class="read-more" data-open-service="exterieur">en savoir plus…</button></p>
+          <div class="service-line"></div>
+          <small class="price-tag">À PARTIR DE 35€</small>
+        </article>
+        <article class="service-card highlight-hover" data-reveal>
+          <span class="num-highlight">02</span>
+          <h3 class="service-title" data-open-service="interieur">Lavage intérieur</h3>
+          <p>Notre lavage intérieur comprend un désincrustage complet des tapis et moquettes, un nettoyage approfondi des plastiques, un brossage des sièges avec injection-extraction. <button type="button" class="read-more" data-open-service="interieur">en savoir plus…</button></p>
+          <div class="service-line"></div>
+          <small class="price-tag">À PARTIR DE 105€</small>
+        </article>
+        <article class="service-card highlight-hover" data-reveal>
+          <span class="num-highlight">03</span>
+          <h3 class="service-title" data-open-service="integral">Lavage intégral</h3>
+          <p>Notre lavage intégral offre une prise en charge minutieuse de votre véhicule, à l'intérieur comme à l'extérieur. À l'extérieur, nous commençons par un nettoyage précis des jantes, un démoustiquage complet de la carrosserie. <button type="button" class="read-more" data-open-service="integral">en savoir plus…</button></p>
+          <div class="service-line"></div>
+          <small class="price-tag">À PARTIR DE 140€</small>
+        </article>
+        <article class="service-card highlight-hover" data-reveal>
+          <span class="num-highlight">04</span>
+          <h3 class="service-title" data-open-service="protection">Protection & finition</h3>
+          <p>Un traitement de surface appliqué à la main pour sublimer la carrosserie et renforcer sa protection. Il apporte une finition brillante et lisse tout en créant un effet déperlant. <button type="button" class="read-more" data-open-service="protection">en savoir plus…</button></p>
+          <div class="service-line"></div>
+          <small class="price-tag">À PARTIR DE 20€</small>
+        </article>
+      </div>
+      <div class="services-foot">
+        <button class="pill-button open-booking" data-service="auto">Réserver un nettoyage auto <span>↗</span></button>
+      </div>
+    </section>
+
+    <div class="service-detail-popup" id="serviceDetailPopup" aria-hidden="true">
+      <div class="modal-backdrop close-service-detail"></div>
+      <div class="service-detail-card">
+        <button class="close-x close-service-detail" type="button" aria-label="Fermer">×</button>
+        <p class="eyebrow" id="serviceDetailPrice"></p>
+        <h2 id="serviceDetailTitle"></h2>
+        <p id="serviceDetailText"></p>
+        <button class="pill-button open-booking" id="serviceDetailBook" data-service="auto">Réserver maintenant <span>↗</span></button>
+      </div>
+    </div>
+
+    <div class="mini-popup" id="requireWashPopup" aria-hidden="true">
+      <div class="modal-backdrop" id="cancelRequireWash"></div>
+      <div class="mini-popup-card">
+        <p>Cette prestation nécessite un <strong>lavage extérieur</strong>. Vous pourrez, si vous le souhaitez, ajouter ses suppléments à votre réservation.</p>
+        <div class="mini-popup-actions">
+          <button type="button" class="text-button" id="cancelRequireWashBtn">Annuler</button>
+          <button type="button" class="pill-button" id="confirmRequireWash">OK <span>✓</span></button>
+        </div>
+      </div>
+    </div>
+
+    <section id="avis" class="reviews content-section">
+      <div class="section-heading" data-reveal>
+        <p class="eyebrow">05 · AVIS CLIENTS</p>
+        <h2>Ce qu'ils en<br><em>pensent.</em></h2>
+      </div>
+      <div class="reviews-grid" id="reviewsGrid">
+        <p class="reviews-empty" id="reviewsEmpty">Soyez le premier à laisser un avis !</p>
+      </div>
+      <button class="pill-button" id="openReviewForm" type="button">Laisser un avis <span>★</span></button>
+
+      <div class="review-form-wrap" id="reviewFormWrap" hidden>
+        <form id="reviewForm">
+          <p class="eyebrow">VOTRE AVIS</p>
+          <div class="star-picker" id="starPicker">
+            <button type="button" data-star="1">★</button>
+            <button type="button" data-star="2">★</button>
+            <button type="button" data-star="3">★</button>
+            <button type="button" data-star="4">★</button>
+            <button type="button" data-star="5">★</button>
+          </div>
+          <input type="hidden" name="rating" id="ratingInput" required>
+          <label>Votre nom<input name="name" required></label>
+          <label>Votre commentaire (facultatif)<textarea name="comment" rows="3"></textarea></label>
+          <button class="pill-button submit-btn" type="submit">Envoyer mon avis <span>✓</span></button>
+          <p class="form-note">Votre avis sera visible sur le site.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="final-cta content-section">
+      <img src="assets/amDNA-logo.png" alt="AMDNA" class="final-logo">
+      <p class="eyebrow" data-reveal>NAUTIC · AUTO · CÔTE D'AZUR</p>
+      <h2 data-reveal>Votre véhicule.<br><em>Notre détail.</em></h2>
+      <button class="pill-button light open-booking" data-service="auto">Commencer une réservation <span>↗</span></button>
+    </section>
+  </main>
+
+  <footer>
+    <div>AMDNA · NAUTIC & AUTO DETAILING</div>
+    <div>VAR · CÔTE D'AZUR</div>
+    <a href="admin.html" class="admin-link">ESPACE PRO</a>
+  </footer>
+
+  <div class="booking-modal" id="bookingModal" aria-hidden="true">
+    <div class="modal-backdrop close-booking"></div>
+    <div class="booking-panel">
+      <button class="close-x close-booking" type="button" aria-label="Fermer">×</button>
+      <div class="booking-head" id="bookingHead">
+        <p class="eyebrow">AMDNA · RÉSERVATION</p>
+        <h2 id="bookingTitle">Demander un devis<br><em>nautic.</em></h2>
+        <p class="nowrap-line">Quelques informations suffisent. Vous pourrez ensuite choisir un créneau disponible.</p>
+      </div>
+
+      <div class="service-select-step" id="serviceSelectStep" hidden>
+        <p class="eyebrow">01 · PRESTATION</p>
+        <h2>Quelle prestation<br><em>souhaitez-vous réserver ?</em></h2>
+        <div class="service-pick-list" id="servicePickList"></div>
+      </div>
+
+      <div class="protection-options-step" id="protectionOptionsStep" hidden>
+        <div class="calendar-head">
+          <div>
+            <p class="eyebrow">PROTECTION & FINITION</p>
+            <h3>Choisissez votre<br>traitement.</h3>
+          </div>
+          <button type="button" class="text-button" id="backToServicePickFromProtection">← Modifier</button>
+        </div>
+        <div class="protection-pick-list" id="protectionPickList"></div>
+      </div>
+
+      <div class="vehicle-category-step" id="vehicleCategoryStep" hidden>
+        <div class="calendar-head">
+          <div>
+            <p class="eyebrow">GABARIT</p>
+            <h3>Précisons le gabarit<br>de votre véhicule.</h3>
+          </div>
+          <button type="button" class="text-button" id="backFromCategory">← Modifier</button>
+        </div>
+        <div class="category-pick-list" id="vehicleCategoryList"></div>
+      </div>
+
+      <div class="supplements-step" id="supplementsStep" hidden>
+        <div class="calendar-head">
+          <div>
+            <p class="eyebrow">SUPPLÉMENTS</p>
+            <h3>Personnalisez<br>votre prestation.</h3>
+          </div>
+          <button type="button" class="text-button" id="backToServicePick">← Modifier</button>
+        </div>
+        <div id="locationChoiceWrap"></div>
+        <div class="supp-list" id="supplementsList"></div>
+        <div class="supp-total">Total <strong id="suppTotal">0 €</strong></div>
+        <button class="pill-button submit-btn" type="button" id="continueToForm">Continuer <span>→</span></button>
+      </div>
+
+      <form id="bookingForm" class="booking-form" hidden>
+        <input type="hidden" id="bookingService" name="service" value="nautic">
+        <div class="form-grid">
+          <label>Prénom<input name="firstName" autocomplete="given-name" required></label>
+          <label>Nom<input name="lastName" autocomplete="family-name" required></label>
+          <label>Téléphone<input name="phone" type="tel" autocomplete="tel" required></label>
+          <label>E-mail<input name="email" type="email" autocomplete="email" required></label>
+          <label class="full">Localisation<input name="location" id="locationInput" placeholder="Port, ville ou secteur"></label>
+          <label class="full" id="boatTypeWrap">Type de bateau / véhicule<input name="asset" id="assetInput" list="vehicleModels" placeholder="Ex. yacht 18 m / SUV" autocomplete="off"></label>
+          <datalist id="vehicleModels"></datalist>
+          <datalist id="boatModels"></datalist>
+          <label class="full" id="messageWrap">Votre demande<textarea name="message" rows="4" placeholder="Avez-vous des précisions à apporter concernant ce nettoyage ou autre demande ?"></textarea></label>
+          <label class="full upload-label" id="photosLabel">Photos du bateau / véhicule
+            <input id="photos" name="photos" type="file" accept="image/*" multiple>
+            <span class="upload-box">+ Ajouter des photos</span>
+          </label>
+          <div class="preview" id="preview"></div>
+        </div>
+        <label class="check-row">
+          <input id="visitCheck" name="visit" type="checkbox">
+          <span>Je souhaite demander une <strong>visite préalable au devis</strong>.</span>
+        </label>
+        <button class="pill-button submit-btn" id="formSubmitBtn" type="submit">Continuer vers le calendrier <span>→</span></button>
+        <p class="form-note">En envoyant ce formulaire, vous acceptez d'être recontacté pour traiter votre demande.</p>
+      </form>
+
+      <div class="calendar-step" id="calendarStep" hidden>
+        <div class="calendar-head">
+          <div>
+            <p class="eyebrow">02 · DISPONIBILITÉS</p>
+            <h3>Choisissez votre créneau.</h3>
+          </div>
+          <button type="button" class="text-button" id="backToForm">← Modifier</button>
+        </div>
+        <div class="month-nav">
+          <button type="button" id="prevMonth">←</button>
+          <strong id="monthLabel"></strong>
+          <button type="button" id="nextMonth">→</button>
+        </div>
+        <div class="weekdays"><span>LUN</span><span>MAR</span><span>MER</span><span>JEU</span><span>VEN</span><span>SAM</span><span>DIM</span></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="time-wrap">
+          <p class="eyebrow">CRÉNEAUX</p>
+          <div class="times" id="times"></div>
+        </div>
+        <button class="pill-button submit-btn" id="confirmBooking" type="button" disabled>Confirmer ma demande <span>✓</span></button>
+        <p class="form-note">Les créneaux déjà réservés par d'autres clients apparaissent grisés automatiquement.</p>
+      </div>
+
+      <div class="success-step" id="successStep" hidden>
+        <div class="success-icon">✓</div>
+        <p class="eyebrow">DEMANDE ENREGISTRÉE</p>
+        <h2>C'est réservé<br><em>pour la suite.</em></h2>
+        <p class="success-thanks" id="successThanks"></p>
+        <div class="success-recap" id="successRecap">
+          <div class="recap-row"><span>Prestation</span><strong id="recapService"></strong></div>
+          <div class="recap-row"><span>Date &amp; heure</span><strong id="recapDate"></strong></div>
+          <div class="recap-row" id="recapPriceRow" hidden><span>Total</span><strong id="recapPrice"></strong></div>
+        </div>
+        <p class="success-note">Un e-mail de confirmation vous a été envoyé. Nous revenons vers vous rapidement pour valider définitivement le rendez-vous.</p>
+        <div class="success-actions">
+          <button class="pill-button" id="backToSite" type="button">Retour sur le site <span>↗</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
