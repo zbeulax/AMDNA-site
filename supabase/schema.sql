@@ -231,6 +231,41 @@ drop policy if exists "owner_manage_clients" on clients;
 create policy "owner_manage_clients" on clients
   for all to authenticated using (true) with check (true);
 
+-- ----------------------------------------------------------
+-- 10. Factures (privé, uniquement toi).
+--     Créées manuellement depuis un devis accepté ("Créer la
+--     facture") — un devis ne peut générer qu'une seule facture
+--     (contrainte unique sur quote_id). Les informations sont
+--     recopiées depuis le devis au moment de la création, pour
+--     que la facture reste figée même si le devis est modifié
+--     ensuite.
+-- ----------------------------------------------------------
+create table if not exists invoices (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  invoice_number text,
+  quote_id uuid unique references quotes(id) on delete set null,
+  quote_number text,
+  client_name text not null,
+  client_first_name text,
+  client_email text,
+  client_phone text,
+  client_address text,
+  service text,
+  items jsonb not null default '[]',
+  total numeric not null default 0,
+  notes text,
+  vat_labor boolean default false,
+  vat_produit boolean default false,
+  vat_amount numeric default 0,
+  total_ttc numeric,
+  payment_status text not null default 'unpaid' check (payment_status in ('unpaid','deposit','paid'))
+);
+alter table invoices enable row level security;
+drop policy if exists "owner_manage_invoices" on invoices;
+create policy "owner_manage_invoices" on invoices
+  for all to authenticated using (true) with check (true);
+
 -- ==========================================================
 -- Fin du script. Une fois exécuté sans erreur, ton site peut
 -- se connecter à ces tables via supabase-config.js.

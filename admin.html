@@ -33,6 +33,7 @@
         <button class="tab-btn active" data-tab="planning">Planning</button>
         <button class="tab-btn" data-tab="clients">Clients</button>
         <button class="tab-btn" data-tab="quotes">Devis</button>
+        <button class="tab-btn" data-tab="invoices">Factures</button>
         <button class="tab-btn" data-tab="revenue">Chiffre d'affaires</button>
         <button class="tab-btn" data-tab="calc">Calcul</button>
         <button class="tab-btn" data-tab="reviews">Avis</button>
@@ -192,6 +193,17 @@ Un acompte de 30 % du montant total du devis est demandé à la signature du dev
         </div>
       </section>
 
+      <!-- ============ FACTURES ============ -->
+      <section id="tab-invoices" class="tab-panel">
+        <div class="panel-head">
+          <h2>Factures</h2>
+          <button class="btn-ghost small" id="refreshInvoices">↻ Rafraîchir</button>
+        </div>
+        <p class="hint-text">Une facture se crée depuis un devis accepté (onglet Devis → bouton "Créer la facture").</p>
+        <div id="invoicesList"></div>
+        <p id="invoicesEmpty" class="empty-note" hidden>Aucune facture pour l'instant.</p>
+      </section>
+
       <!-- ============ CHIFFRE D'AFFAIRES ============ -->
       <section id="tab-revenue" class="tab-panel">
         <div class="panel-head">
@@ -325,6 +337,15 @@ Un acompte de 30 % du montant total du devis est demandé à la signature du dev
     <div class="photo-viewer-card" style="max-width:440px">
       <button class="btn-ghost small" id="closeEventDetailBtn" style="position:absolute;top:16px;right:16px">Fermer ×</button>
       <div id="eventDetailBody"></div>
+    </div>
+  </div>
+
+  <div id="clientQuotesViewer" class="photo-viewer" hidden>
+    <div class="photo-viewer-backdrop" id="closeClientQuotesViewer"></div>
+    <div class="photo-viewer-card" style="max-width:560px">
+      <button class="btn-ghost small" id="closeClientQuotesViewerBtn" style="position:absolute;top:16px;right:16px">Fermer ×</button>
+      <h3 id="clientQuotesTitle">Devis du client</h3>
+      <div id="clientQuotesBody"></div>
     </div>
   </div>
 

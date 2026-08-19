@@ -9,6 +9,9 @@ if(!SUPABASE_READY){
 }
 const supabase = SUPABASE_READY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+let revenueData={labor:[],produit:[]};
+const VAT_THRESHOLDS={labor:37500,produit:85800};
+
 const loginScreen=document.getElementById("loginScreen");
 const dashboard=document.getElementById("dashboard");
 const loginForm=document.getElementById("loginForm");
@@ -23,7 +26,7 @@ function showLogin(){loginScreen.hidden=false;dashboard.hidden=true}
 function showDashboard(){
   loginScreen.hidden=true;dashboard.hidden=false;
   window.scrollTo(0,0);
-  loadBookings();loadQuotesHistory();loadReviewsAdmin();loadRevenue();loadCalendarWeek();refreshQuoteNumber();loadClientsDb();
+  loadBookings();loadQuotesHistory();loadReviewsAdmin();loadRevenue();loadCalendarWeek();refreshQuoteNumber();loadClientsDb();loadInvoicesList();
   const jobDate=document.getElementById("jobDate");
   if(jobDate && !jobDate.value) jobDate.value=new Date().toISOString().slice(0,10);
 }
@@ -475,9 +478,34 @@ function updateQuoteTotal(){
     row.querySelector(".item-line-total").textContent=lineTotal.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
   });
   const totalHT=laborHT+produitHT;
-  const vatLaborOn=document.getElementById("vatLaborToggle").checked;
-  const vatProduitOn=document.getElementById("vatProduitToggle").checked;
-  const vat=(vatLaborOn?laborHT*0.2:0)+(vatProduitOn?produitHT*0.2:0);
+
+  const year=new Date().getFullYear();
+  const yearSum=cat=>(revenueData[cat]||[]).filter(e=>new Date(e.date).getFullYear()===year).reduce((s,e)=>s+e.amount,0);
+  const priorLabor=yearSum("labor"), priorProduit=yearSum("produit");
+  const laborRemaining=Math.max(0,VAT_THRESHOLDS.labor-priorLabor);
+  const produitRemaining=Math.max(0,VAT_THRESHOLDS.produit-priorProduit);
+  const laborEligible=(priorLabor+laborHT)>VAT_THRESHOLDS.labor;
+  const produitEligible=(priorProduit+produitHT)>VAT_THRESHOLDS.produit;
+  const laborTaxable=laborEligible?Math.max(0,laborHT-laborRemaining):0;
+  const produitTaxable=produitEligible?Math.max(0,produitHT-produitRemaining):0;
+
+  const laborToggle=document.getElementById("vatLaborToggle");
+  const produitToggle=document.getElementById("vatProduitToggle");
+  laborToggle.disabled=!laborEligible;
+  produitToggle.disabled=!produitEligible;
+  laborToggle.checked=laborEligible;
+  produitToggle.checked=produitEligible;
+  const vatLaborNote=document.getElementById("vatLaborNote");
+  if(vatLaborNote) vatLaborNote.textContent=laborEligible
+    ?`Seuil de franchise dépassé — TVA appliquée uniquement sur ${laborTaxable.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})} (la part au-delà de 37 500 € de CA nettoyage cumulé sur l'année).`
+    :`S'active automatiquement si ce devis fait dépasser 37 500 € de CA nettoyage sur l'année (actuellement ${priorLabor.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})} avant ce devis).`;
+  const vatProduitNote=document.getElementById("vatProduitNote");
+  if(vatProduitNote) vatProduitNote.textContent=produitEligible
+    ?`Seuil de franchise dépassé — TVA appliquée uniquement sur ${produitTaxable.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})} (la part au-delà de 85 800 € de CA vente produit cumulé sur l'année).`
+    :`S'active automatiquement si ce devis fait dépasser 85 800 € de CA vente produit sur l'année (actuellement ${priorProduit.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})} avant ce devis).`;
+
+  const vatLaborOn=laborEligible, vatProduitOn=produitEligible;
+  const vat=laborTaxable*0.2+produitTaxable*0.2;
   const totalTTC=totalHT+vat;
 
   document.getElementById("quoteTotalHT").textContent=totalHT.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
@@ -485,7 +513,7 @@ function updateQuoteTotal(){
   document.getElementById("quoteTvaRow").hidden=!showVat;
   document.getElementById("quoteTtcRow").hidden=!showVat;
   if(showVat){
-    const vatPctLabel=vatLaborOn&&vatProduitOn?"20%":vatLaborOn?"20% sur main-d'œuvre":"20% sur produits";
+    const vatPctLabel=vatLaborOn&&vatProduitOn?"20% sur la part au-delà du seuil":vatLaborOn?"20% sur la part main-d'œuvre au-delà du seuil":"20% sur la part produits au-delà du seuil";
     document.getElementById("quoteTvaLabel").textContent=`TVA (${vatPctLabel})`;
     document.getElementById("quoteTva").textContent=vat.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
     document.getElementById("quoteTotalTTC").textContent=totalTTC.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
@@ -498,7 +526,9 @@ document.getElementById("addItem").addEventListener("click",()=>addQuoteItem());
 addQuoteItem();
 updateQtyLabel();
 
-function buildQuotePdf(data){
+function buildQuotePdf(data,docType){
+  docType=docType||"devis";
+  const isInvoice=docType==="facture";
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:"pt",format:"a4"});
   const pageW=doc.internal.pageSize.getWidth();
@@ -523,6 +553,7 @@ function buildQuotePdf(data){
   const colQty=colUnit-55;
   const descRight=colQty-16;
   let y=64;
+  const docLabel=isInvoice?"Facture":"Devis";
 
   function drawTableHeader(){
     doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]);
@@ -559,11 +590,16 @@ function buildQuotePdf(data){
     y=Math.max(y-30+logoH+16,cy)+28;
 
     doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(DARK[0],DARK[1],DARK[2]);
-    doc.text(`Devis N° ${data.number||""}`,margin,y);
-    y+=20;
+    doc.text(`${docLabel} N° ${data.number||""}`,margin,y);
+    y+=18;
+    if(isInvoice&&data.originQuoteNumber){
+      doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(MUTED[0],MUTED[1],MUTED[2]);
+      doc.text(`Devis d'origine : ${data.originQuoteNumber}`,margin,y);
+      y+=16;
+    }
     doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(MUTED[0],MUTED[1],MUTED[2]);
     doc.text(`Date d'émission : ${new Intl.DateTimeFormat("fr-FR",{dateStyle:"long"}).format(new Date())}`,margin,y);
-    doc.text("Période de validité : 30 jours",pageW-margin,y,{align:"right"});
+    if(!isInvoice) doc.text("Période de validité : 30 jours",pageW-margin,y,{align:"right"});
     y+=22;
   }
 
@@ -582,7 +618,7 @@ function buildQuotePdf(data){
       doc.addPage();
       y=64;
       doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(DARK[0],DARK[1],DARK[2]);
-      doc.text(`Devis N° ${data.number||""} (suite)`,margin,y);
+      doc.text(`${docLabel} N° ${data.number||""} (suite)`,margin,y);
       y+=22;
       drawTableHeader();
       doc.setTextColor(DARK[0],DARK[1],DARK[2]);
@@ -640,9 +676,13 @@ function buildQuotePdf(data){
 
   if(y+50>contentBottom){doc.addPage();y=64;}
   doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(DARK[0],DARK[1],DARK[2]);
-  doc.text("Pour être accepté, le devis doit être daté, signé et suivi de la mention manuscrite « Bon pour accord ».",margin,y);
-  y+=26;
-  doc.text("Signature du client :",margin,y);
+  if(isInvoice){
+    doc.text("Facture à régler selon les modalités convenues avec le client. Merci pour votre confiance.",margin,y);
+  }else{
+    doc.text("Pour être accepté, le devis doit être daté, signé et suivi de la mention manuscrite « Bon pour accord ».",margin,y);
+    y+=26;
+    doc.text("Signature du client :",margin,y);
+  }
 
   const totalPages=doc.internal.getNumberOfPages();
   for(let p=1;p<=totalPages;p++){
@@ -746,25 +786,64 @@ async function loadClientsDb(){
     const fullName=[c.first_name,c.name].filter(Boolean).join(" ");
     const contactBits=[c.email,c.phone,c.address].filter(Boolean).join(" · ");
     card.innerHTML=`
-      <div><div class="cdb-name">${escapeHtml(fullName)}</div>${contactBits?`<div class="cdb-contact">${escapeHtml(contactBits)}</div>`:""}</div>
+      <div class="cdb-main" role="button" tabindex="0">
+        <div class="cdb-name">${escapeHtml(fullName)}</div>
+        ${contactBits?`<div class="cdb-contact">${escapeHtml(contactBits)}</div>`:""}
+        <span class="cdb-link">Voir les devis →</span>
+      </div>
       <div class="client-db-status"></div>
+      <button type="button" class="cdb-delete" title="Supprimer ce client">×</button>
     `;
+    const openQuotes=()=>openClientQuotes(c,fullName);
+    card.querySelector(".cdb-main").addEventListener("click",openQuotes);
+    card.querySelector(".cdb-main").addEventListener("keydown",e=>{if(e.key==="Enter") openQuotes();});
     const statusWrap=card.querySelector(".client-db-status");
     [["unpaid","Impayé","rejected"],["deposit","Acompte versé","deposit"],["paid","Payé","accepted"]].forEach(([val,label,cls])=>{
       const b=document.createElement("button");
       b.type="button";b.className="status-btn "+cls+(c.payment_status===val?" active":"");
       b.textContent=label;
-      b.addEventListener("click",async()=>{
+      b.addEventListener("click",async(e)=>{
+        e.stopPropagation();
         const {error:updErr}=await supabase.from("clients").update({payment_status:val,updated_at:new Date().toISOString()}).eq("id",c.id);
         if(updErr){alert("Erreur lors de la mise à jour du statut.");console.warn(updErr);return}
         loadClientsDb();
       });
       statusWrap.appendChild(b);
     });
+    card.querySelector(".cdb-delete").addEventListener("click",async(e)=>{
+      e.stopPropagation();
+      if(!confirm(`Supprimer définitivement ${fullName} de la base clients ? (les devis déjà enregistrés ne seront pas supprimés)`)) return;
+      const {error:delErr}=await supabase.from("clients").delete().eq("id",c.id);
+      if(delErr){alert("Erreur lors de la suppression.");console.warn(delErr);return}
+      loadClientsDb();
+    });
     listEl.appendChild(card);
   });
 }
 document.getElementById("refreshClientsDb").addEventListener("click",loadClientsDb);
+
+async function openClientQuotes(client,fullName){
+  const viewer=document.getElementById("clientQuotesViewer");
+  const body=document.getElementById("clientQuotesBody");
+  document.getElementById("clientQuotesTitle").textContent=`Devis de ${fullName}`;
+  body.innerHTML="<p class=\"empty-note\">Chargement…</p>";
+  viewer.hidden=false;
+  let query=supabase.from("quotes").select("*").ilike("client_name",client.name).order("created_at",{ascending:false});
+  query=client.first_name?query.ilike("client_first_name",client.first_name):query.is("client_first_name",null);
+  const {data,error}=await query;
+  if(error){body.innerHTML="<p class=\"empty-note\">Erreur lors du chargement des devis.</p>";console.warn(error);return}
+  if(!data||!data.length){body.innerHTML="<p class=\"empty-note\">Aucun devis enregistré pour ce client.</p>";return}
+  body.innerHTML="";
+  data.forEach(q=>{
+    const amountLabel=(+ (q.total_ttc||q.total)||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+    const statusLabel={accepted:"Accepté",rejected:"Refusé",pending:"En attente"}[q.status||"pending"];
+    const row=document.createElement("div");row.className="event-detail-row";
+    row.innerHTML=`<span>${escapeHtml(q.quote_number||"—")} · ${new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium"}).format(new Date(q.created_at))}</span><strong>${amountLabel} · ${statusLabel}</strong>`;
+    body.appendChild(row);
+  });
+}
+document.getElementById("closeClientQuotesViewer").addEventListener("click",()=>{document.getElementById("clientQuotesViewer").hidden=true});
+document.getElementById("closeClientQuotesViewerBtn").addEventListener("click",()=>{document.getElementById("clientQuotesViewer").hidden=true});
 
 async function generateNextQuoteNumber(){
   if(!supabase) return "";
@@ -782,6 +861,137 @@ async function refreshQuoteNumber(){
   const field=document.getElementById("qNumber");
   field.value=await generateNextQuoteNumber()||field.value;
 }
+
+/* ---------------------------------------------------------
+   Factures
+   --------------------------------------------------------- */
+async function generateNextInvoiceNumber(){
+  if(!supabase) return "";
+  const year=new Date().getFullYear();
+  const prefix=`FAC-${year}-`;
+  const {data}=await supabase.from("invoices").select("invoice_number").ilike("invoice_number",prefix+"%");
+  let max=0;
+  (data||[]).forEach(inv=>{
+    const m=(inv.invoice_number||"").match(/^FAC-\d{4}-(\d+)$/);
+    if(m) max=Math.max(max,parseInt(m[1],10));
+  });
+  return prefix+String(max+1).padStart(3,"0");
+}
+
+async function createInvoiceFromQuote(q){
+  if(!supabase) return;
+  if(q.status!=="accepted"){alert("Seul un devis accepté peut être facturé.");return}
+  const {data:existing,error:findErr}=await supabase.from("invoices").select("id,invoice_number").eq("quote_id",q.id).maybeSingle();
+  if(findErr&&findErr.code!=="PGRST116"){
+    alert("Impossible de vérifier les factures existantes. Il faut probablement relancer supabase/schema.sql.");
+    console.warn(findErr);return;
+  }
+  if(existing){alert(`Une facture existe déjà pour ce devis : ${existing.invoice_number}. Ouvre l'onglet Factures pour la retrouver.`);loadInvoicesList();return}
+  if(!confirm(`Créer la facture pour le devis ${q.quote_number} (${q.client_name}) ?`)) return;
+  const invoiceNumber=await generateNextInvoiceNumber();
+  const payload={
+    invoice_number:invoiceNumber, quote_id:q.id, quote_number:q.quote_number,
+    client_name:q.client_name, client_first_name:q.client_first_name, client_email:q.client_email,
+    client_phone:q.client_phone, client_address:q.client_address, service:q.service,
+    items:q.items||[], total:+q.total||0, notes:q.notes,
+    vat_labor:q.vat_labor, vat_produit:q.vat_produit, vat_amount:+q.vat_amount||0, total_ttc:+q.total_ttc||+q.total||0
+  };
+  const {error}=await supabase.from("invoices").insert(payload);
+  if(error){
+    if(error.code==="23505"){alert("Une facture existe déjà pour ce devis.");}
+    else{alert("Erreur lors de la création de la facture. Il faut probablement relancer supabase/schema.sql.");console.warn(error);}
+    loadInvoicesList();return;
+  }
+  alert(`Facture ${invoiceNumber} créée.`);
+  loadQuotesHistory();loadInvoicesList();
+}
+
+function buildInvoicePdfData(inv){
+  return {
+    clientName:inv.client_name, clientFirstName:inv.client_first_name, number:inv.invoice_number,
+    originQuoteNumber:inv.quote_number, clientEmail:inv.client_email, clientPhone:inv.client_phone,
+    clientAddress:inv.client_address, notes:inv.notes, items:inv.items||[], total:+inv.total||0,
+    service:inv.service, vatAmount:+inv.vat_amount||0, totalTTC:+inv.total_ttc||+inv.total||0,
+    vatLabor:inv.vat_labor, vatProduit:inv.vat_produit
+  };
+}
+
+function downloadInvoicePdf(inv){
+  const doc=buildQuotePdf(buildInvoicePdfData(inv),"facture");
+  doc.save(`Facture-AMDNA-${inv.client_name.replace(/\s+/g,"-")}.pdf`);
+}
+
+function focusQuoteById(quoteId){
+  document.querySelector('.tab-btn[data-tab="quotes"]').click();
+  setTimeout(()=>{
+    const el=document.querySelector(`.quote-item[data-quote-id="${quoteId}"]`);
+    if(!el) return;
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+    el.style.transition="background .3s";
+    el.style.background="rgba(25,217,180,.15)";
+    setTimeout(()=>{el.style.background="";},1600);
+  },80);
+}
+function focusInvoiceById(invoiceId){
+  document.querySelector('.tab-btn[data-tab="invoices"]').click();
+  setTimeout(()=>{
+    const el=document.querySelector(`.invoice-item[data-invoice-id="${invoiceId}"]`);
+    if(!el) return;
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+    el.style.transition="background .3s";
+    el.style.background="rgba(25,217,180,.15)";
+    setTimeout(()=>{el.style.background="";},1600);
+  },80);
+}
+
+async function loadInvoicesList(){
+  if(!supabase) return;
+  const listEl=document.getElementById("invoicesList");
+  const emptyEl=document.getElementById("invoicesEmpty");
+  const {data,error}=await supabase.from("invoices").select("*").order("created_at",{ascending:false});
+  if(error){listEl.innerHTML="";emptyEl.hidden=false;emptyEl.textContent="Impossible de charger les factures (relance supabase/schema.sql).";console.warn(error);return}
+  listEl.innerHTML="";
+  if(!data||!data.length){emptyEl.hidden=false;emptyEl.textContent="Aucune facture pour l'instant.";return}
+  emptyEl.hidden=true;
+  data.forEach(inv=>{
+    const el=document.createElement("div");el.className="quote-item invoice-item";el.dataset.invoiceId=inv.id;
+    const amountLabel=(+inv.total_ttc>0?+inv.total_ttc:+inv.total).toLocaleString("fr-FR",{style:"currency",currency:"EUR"})+((+inv.vat_amount||0)>0?" TTC":"");
+    const fullName=[inv.client_first_name,inv.client_name].filter(Boolean).join(" ");
+    el.innerHTML=`
+      <div class="quote-status-box pending">
+        <span>${escapeHtml(inv.invoice_number||"—")}</span>
+        <strong>${new Intl.DateTimeFormat("fr-FR",{dateStyle:"long"}).format(new Date(inv.created_at))} — ${amountLabel}</strong>
+      </div>
+      <strong class="quote-client-name">${escapeHtml(fullName)}</strong>
+      <div class="quote-status-actions"></div>
+    `;
+    const actionsWrap=el.querySelector(".quote-status-actions");
+    [["unpaid","Impayé","rejected"],["deposit","Acompte versé","deposit"],["paid","Payé","accepted"]].forEach(([val,label,cls])=>{
+      const b=document.createElement("button");
+      b.type="button";b.className="status-btn "+cls+(inv.payment_status===val?" active":"");
+      b.textContent=label;
+      b.addEventListener("click",async()=>{
+        const {error:updErr}=await supabase.from("invoices").update({payment_status:val}).eq("id",inv.id);
+        if(updErr){alert("Erreur lors de la mise à jour du statut.");console.warn(updErr);return}
+        loadInvoicesList();
+      });
+      actionsWrap.appendChild(b);
+    });
+    const dl=document.createElement("button");
+    dl.className="btn-ghost small";dl.style.marginTop="10px";dl.textContent="Télécharger le PDF";
+    dl.addEventListener("click",()=>downloadInvoicePdf(inv));
+    el.appendChild(dl);
+    if(inv.quote_id){
+      const back=document.createElement("button");
+      back.className="btn-ghost small";back.style.marginTop="10px";back.style.marginLeft="8px";back.textContent="Voir le devis d'origine";
+      back.addEventListener("click",()=>focusQuoteById(inv.quote_id));
+      el.appendChild(back);
+    }
+    listEl.appendChild(el);
+  });
+}
+document.getElementById("refreshInvoices").addEventListener("click",loadInvoicesList);
+
 
 function cancelEditQuote(){
   editingQuoteId=null;
@@ -833,6 +1043,11 @@ async function loadQuotesHistory(){
   const {data,error}=await supabase.from("quotes").select("*").order("created_at",{ascending:false}).limit(30);
   const wrap=document.getElementById("quotesHistory");
   if(error||!data||!data.length){wrap.innerHTML='<p style="color:var(--muted);font-size:13px">Aucun devis enregistré.</p>';return}
+  let invoiceByQuote={};
+  try{
+    const {data:invRows}=await supabase.from("invoices").select("id,quote_id,invoice_number");
+    (invRows||[]).forEach(r=>{if(r.quote_id) invoiceByQuote[r.quote_id]=r;});
+  }catch(e){console.warn("Factures indisponibles (relance supabase/schema.sql) :",e);}
   wrap.innerHTML="";
   data.forEach(q=>{
     const status=q.status||"pending";
@@ -840,7 +1055,7 @@ async function loadQuotesHistory(){
     const amountLabel=hasVat
       ?`${(+q.total_ttc).toLocaleString("fr-FR",{style:"currency",currency:"EUR"})} TTC`
       :`${(+q.total).toLocaleString("fr-FR",{style:"currency",currency:"EUR"})}`;
-    const el=document.createElement("div");el.className="quote-item";
+    const el=document.createElement("div");el.className="quote-item";el.dataset.quoteId=q.id;
     el.innerHTML=`
       <div class="quote-status-box ${status}">
         <span>Enregistré</span>
@@ -875,17 +1090,42 @@ async function loadQuotesHistory(){
     el.appendChild(dl);
     const editBtn=document.createElement("button");
     editBtn.className="btn-ghost small";editBtn.style.marginTop="10px";editBtn.style.marginLeft="8px";editBtn.textContent="Modifier";
-    editBtn.addEventListener("click",()=>loadQuoteIntoForm(q));
+    editBtn.addEventListener("click",()=>{
+      const linkedInvoice=invoiceByQuote[q.id];
+      if(linkedInvoice&&!confirm(`Une facture (${linkedInvoice.invoice_number}) existe déjà pour ce devis. La modifier ici ne mettra PAS à jour la facture déjà émise — il faudra faire un avoir si besoin. Continuer quand même ?`)) return;
+      loadQuoteIntoForm(q);
+    });
     el.appendChild(editBtn);
     const delBtn=document.createElement("button");
     delBtn.className="btn-ghost small danger";delBtn.style.marginTop="10px";delBtn.style.marginLeft="8px";delBtn.textContent="Supprimer";
     delBtn.addEventListener("click",async()=>{
-      if(!confirm(`Supprimer définitivement le devis de ${q.client_name} ?`))return;
+      const linkedInvoice=invoiceByQuote[q.id];
+      const warn=linkedInvoice?`\n\nAttention : la facture ${linkedInvoice.invoice_number} restera dans l'onglet Factures mais perdra son lien vers ce devis.`:"";
+      if(!confirm(`Supprimer définitivement le devis de ${q.client_name} ?`+warn))return;
       const {error}=await supabase.from("quotes").delete().eq("id",q.id);
       if(error){alert("Erreur lors de la suppression.");console.warn(error);return}
       loadQuotesHistory();loadRevenue();
     });
     el.appendChild(delBtn);
+
+    if(status==="accepted"){
+      const linkedInvoice=invoiceByQuote[q.id];
+      if(linkedInvoice){
+        const invLine=document.createElement("div");invLine.style.marginTop="10px";invLine.style.fontSize="12.5px";invLine.style.color="var(--muted)";
+        invLine.textContent=`Facture : ${linkedInvoice.invoice_number}`;
+        el.appendChild(invLine);
+        const openInv=document.createElement("button");
+        openInv.className="btn-ghost small";openInv.style.marginTop="6px";openInv.textContent="Ouvrir la facture";
+        openInv.addEventListener("click",()=>focusInvoiceById(linkedInvoice.id));
+        el.appendChild(openInv);
+      }else{
+        const invBtn=document.createElement("button");
+        invBtn.className="btn-ghost small";invBtn.style.marginTop="10px";invBtn.style.marginLeft="8px";invBtn.textContent="🧾 Créer la facture";
+        invBtn.addEventListener("click",()=>createInvoiceFromQuote(q));
+        el.appendChild(invBtn);
+      }
+    }
+
     wrap.appendChild(el);
   });
 }
@@ -895,7 +1135,6 @@ async function loadQuotesHistory(){
    --------------------------------------------------------- */
 const MONTH_NAMES=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const revenueYearSel=document.getElementById("revenueYear");
-let revenueData={labor:[],produit:[]};
 let revenueCategory="labor";
 
 async function loadRevenue(){
@@ -926,28 +1165,8 @@ async function loadRevenue(){
   renderRevenue();
 }
 const REVENUE_THRESHOLDS={labor:83600,produit:203100};
-const VAT_THRESHOLDS={labor:37500,produit:85800};
 
 function updateVatToggleAvailability(){
-  const year=new Date().getFullYear();
-  const yearSum=cat=>(revenueData[cat]||[]).filter(e=>new Date(e.date).getFullYear()===year).reduce((s,e)=>s+e.amount,0);
-  const laborTotal=yearSum("labor"), produitTotal=yearSum("produit");
-  const laborToggle=document.getElementById("vatLaborToggle");
-  const produitToggle=document.getElementById("vatProduitToggle");
-  const laborEligible=laborTotal>=VAT_THRESHOLDS.labor;
-  const produitEligible=produitTotal>=VAT_THRESHOLDS.produit;
-  laborToggle.disabled=!laborEligible;
-  produitToggle.disabled=!produitEligible;
-  if(!laborEligible) laborToggle.checked=false;
-  else laborToggle.checked=true;
-  if(!produitEligible) produitToggle.checked=false;
-  else produitToggle.checked=true;
-  document.getElementById("vatLaborNote").textContent=laborEligible
-    ?"Seuil de franchise en base de TVA atteint — TVA applicable sur la main-d'œuvre."
-    :`S'active automatiquement à partir de 37 500 € de CA nettoyage sur l'année (actuellement ${laborTotal.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})}).`;
-  document.getElementById("vatProduitNote").textContent=produitEligible
-    ?"Seuil de franchise en base de TVA atteint — TVA applicable sur les produits."
-    :`S'active automatiquement à partir de 85 800 € de CA vente produit sur l'année (actuellement ${produitTotal.toLocaleString("fr-FR",{style:"currency",currency:"EUR"})}).`;
   updateQuoteTotal();
 }
 
