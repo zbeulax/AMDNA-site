@@ -165,6 +165,7 @@ alter table quotes add column if not exists vat_labor boolean default false;
 alter table quotes add column if not exists vat_produit boolean default false;
 alter table quotes add column if not exists vat_amount numeric default 0;
 alter table quotes add column if not exists total_ttc numeric;
+alter table quotes add column if not exists client_first_name text;
 
 -- ----------------------------------------------------------
 -- 8. Créneaux bloqués manuellement par toi (calendrier planning),
@@ -208,6 +209,27 @@ drop policy if exists "owner_read_booking_photos" on storage.objects;
 create policy "owner_read_booking_photos" on storage.objects
   for select to authenticated
   using (bucket_id = 'booking-photos');
+
+-- ----------------------------------------------------------
+-- 9. Base de données clients (privé, uniquement toi).
+--    Alimentée automatiquement à chaque enregistrement de devis :
+--    un client déjà connu (même nom) est mis à jour, sinon créé.
+-- ----------------------------------------------------------
+create table if not exists clients (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  name text not null,
+  first_name text,
+  email text,
+  phone text,
+  address text,
+  payment_status text not null default 'unpaid' check (payment_status in ('unpaid','deposit','paid'))
+);
+alter table clients enable row level security;
+drop policy if exists "owner_manage_clients" on clients;
+create policy "owner_manage_clients" on clients
+  for all to authenticated using (true) with check (true);
 
 -- ==========================================================
 -- Fin du script. Une fois exécuté sans erreur, ton site peut

@@ -23,7 +23,7 @@ function showLogin(){loginScreen.hidden=false;dashboard.hidden=true}
 function showDashboard(){
   loginScreen.hidden=true;dashboard.hidden=false;
   window.scrollTo(0,0);
-  loadBookings();loadQuotesHistory();loadReviewsAdmin();loadRevenue();loadCalendarWeek();refreshQuoteNumber();
+  loadBookings();loadQuotesHistory();loadReviewsAdmin();loadRevenue();loadCalendarWeek();refreshQuoteNumber();loadClientsDb();
   const jobDate=document.getElementById("jobDate");
   if(jobDate && !jobDate.value) jobDate.value=new Date().toISOString().slice(0,10);
 }
@@ -384,7 +384,14 @@ const NAUTIC_DAY_RATES=[
   {label:"Le Lavandou, Saint-Tropez, Bandol, La Ciotat",price:440},
   {label:"Cannes, Nice, Marseille, Fréjus, Saint-Raphaël",price:460}
 ];
-const LABOR_DAY_DETAIL="Forfait à la journée incluant la journée de travail pour le nettoyage du bateau, les frais de déplacement, les péages et les frais d'entrée au port.";
+const LABOR_DAY_DETAIL="* Forfait à la journée incluant la journée de travail pour le nettoyage du bateau, les frais de déplacement, les péages et les frais d'entrée au port.";
+
+function ensureLaborDayNote(){
+  const notesEl=document.getElementById("qNotes");
+  if(!notesEl.value.includes(LABOR_DAY_DETAIL)){
+    notesEl.value=(notesEl.value.trim()?notesEl.value.trim()+"\n\n":"")+LABOR_DAY_DETAIL;
+  }
+}
 
 const quoteItemsEl=document.getElementById("quoteItems");
 const qtyHeadLabel=document.getElementById("qtyHeadLabel");
@@ -414,6 +421,12 @@ function addQuoteItem(desc="",qty=1,price=0,detail="",type="labor"){
   `;
   row.querySelector(".item-remove").addEventListener("click",()=>{row.remove();updateQuoteTotal()});
   row.querySelectorAll(".qi-qty,.qi-price").forEach(inp=>inp.addEventListener("input",updateQuoteTotal));
+  row.querySelector(".qi-desc").addEventListener("blur",e=>{
+    if(e.target.value.trim()==="Main-d'œuvre"){
+      e.target.value="*Main-d'œuvre";
+      ensureLaborDayNote();
+    }
+  });
   row.querySelector(".qi-type").addEventListener("change",e=>{
     const isNauticNow=qServiceSelect.value==="nautic";
     row.querySelector(".qi-sector").hidden=!(isNauticNow&&e.target.value==="labor");
@@ -423,13 +436,10 @@ function addQuoteItem(desc="",qty=1,price=0,detail="",type="labor"){
     const idx=e.target.value;
     if(idx==="") return;
     const sector=NAUTIC_DAY_RATES[+idx];
-    row.querySelector(".qi-desc").value="Main-d'œuvre";
+    row.querySelector(".qi-desc").value="*Main-d'œuvre";
     row.querySelector(".qi-price").value=sector.price;
     row.querySelector(".qi-type").value="labor";
-    const notesEl=document.getElementById("qNotes");
-    if(!notesEl.value.includes(LABOR_DAY_DETAIL)){
-      notesEl.value=(notesEl.value.trim()?notesEl.value.trim()+"\n\n":"")+LABOR_DAY_DETAIL;
-    }
+    ensureLaborDayNote();
     updateQuoteTotal();
   });
   quoteItemsEl.appendChild(row);
@@ -528,6 +538,7 @@ function buildQuotePdf(data){
   }
 
   function drawLetterhead(){
+    const fullClientName=[data.clientFirstName,data.clientName].filter(Boolean).join(" ");
     const logoW=140,logoH=logoW*(116/473);
     doc.addImage(AMDNA_LOGO_PDF,"PNG",margin,y-30,logoW,logoH);
     doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(MUTED[0],MUTED[1],MUTED[2]);
@@ -535,7 +546,7 @@ function buildQuotePdf(data){
 
     let cy=y-22;
     doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.setTextColor(DARK[0],DARK[1],DARK[2]);
-    doc.text(data.clientName||"",pageW-margin,cy,{align:"right"});cy+=14;
+    doc.text(fullClientName,pageW-margin,cy,{align:"right"});cy+=14;
     doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(60,70,80);
     if(data.clientAddress){
       String(data.clientAddress).split("\n").forEach(line=>{
@@ -654,6 +665,7 @@ function collectQuoteFormData(){
   const totals=updateQuoteTotal();
   return {
     clientName:document.getElementById("qClientName").value,
+    clientFirstName:document.getElementById("qClientFirstName").value,
     number:document.getElementById("qNumber").value,
     clientEmail:document.getElementById("qClientEmail").value,
     clientPhone:document.getElementById("qClientPhone").value,
@@ -676,7 +688,7 @@ document.getElementById("saveQuote").addEventListener("click",async()=>{
   if(!data.clientName){alert("Merci d'indiquer le nom du client.");return}
   if(!supabase){alert("Supabase non configuré.");return}
   const payload={
-    quote_number:data.number||null, client_name:data.clientName, client_email:data.clientEmail||null,
+    quote_number:data.number||null, client_name:data.clientName, client_first_name:data.clientFirstName||null, client_email:data.clientEmail||null,
     client_phone:data.clientPhone||null, client_address:data.clientAddress||null,
     service:data.service, items:data.items, total:data.total, notes:data.notes||null,
     vat_labor:data.vatLabor, vat_produit:data.vatProduit, vat_amount:data.vatAmount, total_ttc:data.totalTTC
@@ -688,11 +700,71 @@ document.getElementById("saveQuote").addEventListener("click",async()=>{
     ({error}=await supabase.from("quotes").insert(payload));
   }
   if(error){alert("Erreur lors de l'enregistrement.");console.warn(error);return}
+  await upsertClientFromQuote(data);
   const wasEditing=!!editingQuoteId;
   cancelEditQuote();
-  loadQuotesHistory();loadRevenue();
+  loadQuotesHistory();loadRevenue();loadClientsDb();
   alert(wasEditing?"Devis mis à jour.":"Devis enregistré.");
 });
+
+async function upsertClientFromQuote(data){
+  if(!supabase) return;
+  const nameTrim=(data.clientName||"").trim();
+  if(!nameTrim) return;
+  const firstTrim=(data.clientFirstName||"").trim();
+  try{
+    let query=supabase.from("clients").select("id").ilike("name",nameTrim);
+    query=firstTrim?query.ilike("first_name",firstTrim):query.is("first_name",null);
+    const {data:existing,error:findError}=await query.limit(1);
+    if(findError) throw findError;
+    const payload={
+      name:nameTrim, first_name:firstTrim||null,
+      email:data.clientEmail||null, phone:data.clientPhone||null, address:data.clientAddress||null,
+      updated_at:new Date().toISOString()
+    };
+    if(existing&&existing.length){
+      await supabase.from("clients").update(payload).eq("id",existing[0].id);
+    }else{
+      await supabase.from("clients").insert({...payload,payment_status:"unpaid"});
+    }
+  }catch(err){
+    console.warn("Base clients indisponible (relance supabase/schema.sql) :",err);
+  }
+}
+
+async function loadClientsDb(){
+  const listEl=document.getElementById("clientsDbList");
+  const emptyEl=document.getElementById("clientsDbEmpty");
+  if(!supabase||!listEl) return;
+  const {data,error}=await supabase.from("clients").select("*").order("updated_at",{ascending:false});
+  if(error){console.warn("Impossible de charger la base clients (relance supabase/schema.sql) :",error);listEl.innerHTML="";emptyEl.hidden=false;return}
+  listEl.innerHTML="";
+  if(!data||!data.length){emptyEl.hidden=false;return}
+  emptyEl.hidden=true;
+  data.forEach(c=>{
+    const card=document.createElement("div");card.className="client-db-card";
+    const fullName=[c.first_name,c.name].filter(Boolean).join(" ");
+    const contactBits=[c.email,c.phone,c.address].filter(Boolean).join(" · ");
+    card.innerHTML=`
+      <div><div class="cdb-name">${escapeHtml(fullName)}</div>${contactBits?`<div class="cdb-contact">${escapeHtml(contactBits)}</div>`:""}</div>
+      <div class="client-db-status"></div>
+    `;
+    const statusWrap=card.querySelector(".client-db-status");
+    [["unpaid","Impayé","rejected"],["deposit","Acompte versé","deposit"],["paid","Payé","accepted"]].forEach(([val,label,cls])=>{
+      const b=document.createElement("button");
+      b.type="button";b.className="status-btn "+cls+(c.payment_status===val?" active":"");
+      b.textContent=label;
+      b.addEventListener("click",async()=>{
+        const {error:updErr}=await supabase.from("clients").update({payment_status:val,updated_at:new Date().toISOString()}).eq("id",c.id);
+        if(updErr){alert("Erreur lors de la mise à jour du statut.");console.warn(updErr);return}
+        loadClientsDb();
+      });
+      statusWrap.appendChild(b);
+    });
+    listEl.appendChild(card);
+  });
+}
+document.getElementById("refreshClientsDb").addEventListener("click",loadClientsDb);
 
 async function generateNextQuoteNumber(){
   if(!supabase) return "";
@@ -716,6 +788,7 @@ function cancelEditQuote(){
   document.getElementById("saveQuote").textContent="Enregistrer le devis";
   document.getElementById("editQuoteBanner").hidden=true;
   document.getElementById("qClientName").value="";
+  document.getElementById("qClientFirstName").value="";
   document.getElementById("qClientEmail").value="";
   document.getElementById("qClientPhone").value="";
   document.getElementById("qClientAddress").value="";
@@ -733,6 +806,7 @@ document.getElementById("cancelEditQuote").addEventListener("click",cancelEditQu
 function loadQuoteIntoForm(q){
   editingQuoteId=q.id;
   document.getElementById("qClientName").value=q.client_name||"";
+  document.getElementById("qClientFirstName").value=q.client_first_name||"";
   document.getElementById("qNumber").value=q.quote_number||"—";
   document.getElementById("qClientEmail").value=q.client_email||"";
   document.getElementById("qClientPhone").value=q.client_phone||"";
@@ -772,7 +846,7 @@ async function loadQuotesHistory(){
         <span>Enregistré</span>
         <strong>${new Intl.DateTimeFormat("fr-FR",{dateStyle:"long"}).format(new Date(q.created_at))} — ${amountLabel}</strong>
       </div>
-      <strong class="quote-client-name">${escapeHtml(q.client_name)}</strong>
+      <strong class="quote-client-name">${escapeHtml([q.client_first_name,q.client_name].filter(Boolean).join(" "))}</strong>
       <div class="quote-status-actions"></div>
     `;
     const actionsWrap=el.querySelector(".quote-status-actions");
@@ -791,7 +865,7 @@ async function loadQuotesHistory(){
     dl.className="btn-ghost small";dl.style.marginTop="10px";dl.textContent="Télécharger à nouveau";
     dl.addEventListener("click",()=>{
       const doc=buildQuotePdf({
-        clientName:q.client_name, number:q.quote_number, clientEmail:q.client_email,
+        clientName:q.client_name, clientFirstName:q.client_first_name, number:q.quote_number, clientEmail:q.client_email,
         clientPhone:q.client_phone, clientAddress:q.client_address, notes:q.notes,
         items:q.items||[], total:+q.total, service:q.service,
         vatAmount:+q.vat_amount||0, totalTTC:+q.total_ttc||+q.total, vatLabor:q.vat_labor, vatProduit:q.vat_produit

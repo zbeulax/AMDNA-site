@@ -123,6 +123,7 @@ tr:last-child td{border-bottom:0}
 .quote-form input[readonly]{color:var(--accent);font-weight:700;cursor:default}
 .quote-form input:focus,.quote-form select:focus,.quote-form textarea:focus{border-color:var(--accent)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row-3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px}
 .items-head{display:grid;grid-template-columns:1fr 64px 100px 100px 28px;gap:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 2px}
 .item-row{display:grid;grid-template-columns:1fr 64px 100px 100px 28px;gap:8px;align-items:start;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.05)}
 .item-row input,.item-row select,.item-row textarea{margin:0;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:13px}
@@ -164,6 +165,18 @@ tr:last-child td{border-bottom:0}
 .status-btn.accepted.active{background:rgba(88,214,141,.18);border-color:var(--good);color:var(--good)}
 .status-btn.rejected.active{background:rgba(255,110,110,.18);border-color:var(--danger);color:var(--danger)}
 .status-btn.pending.active{background:rgba(255,255,255,.14);border-color:#fff;color:#fff}
+.status-btn.deposit.active{background:rgba(255,193,90,.18);border-color:#ffc15a;color:#ffc15a}
+.hint-text{font-size:12px;color:var(--muted);margin:-8px 0 16px}
+.clients-db-list{display:flex;flex-direction:column;gap:10px}
+.client-db-card{display:grid;grid-template-columns:1.6fr auto;gap:16px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.03)}
+.client-db-card .cdb-name{font-size:14.5px;font-weight:700;color:var(--white)}
+.client-db-card .cdb-contact{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+.client-db-status{display:flex;gap:6px}
+.client-db-status .status-btn{flex:none;min-width:96px}
+@media(max-width:760px){
+  .client-db-card{grid-template-columns:1fr;text-align:left}
+  .client-db-status{flex-wrap:wrap}
+}
 
 /* ---------- Avis ---------- */
 .reviews-admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
@@ -237,6 +250,7 @@ tr:last-child td{border-bottom:0}
 @media(max-width:860px){
   .quote-layout{grid-template-columns:1fr}
   .form-row{grid-template-columns:1fr}
+  .form-row-3{grid-template-columns:1fr}
   .admin-tabs{order:3;width:100%;justify-content:center}
   .admin-topbar{flex-wrap:wrap}
   .calc-columns{grid-template-columns:1fr}

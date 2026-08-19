@@ -113,6 +113,14 @@
           </table>
           <p id="bookingsEmpty" class="empty-note" hidden>Aucune réservation pour ce filtre.</p>
         </div>
+
+        <div class="panel-head" style="margin-top:34px">
+          <h2>Clients (devis)</h2>
+          <button class="btn-ghost small" id="refreshClientsDb">↻ Rafraîchir</button>
+        </div>
+        <p class="hint-text">Chaque client créé automatiquement en enregistrant un devis. Suis ici l'avancée du paiement.</p>
+        <div id="clientsDbList" class="clients-db-list"></div>
+        <p id="clientsDbEmpty" class="empty-note" hidden>Aucun client enregistré pour l'instant — crée un devis pour voir apparaître le premier.</p>
       </section>
 
       <!-- ============ DEVIS ============ -->
@@ -120,8 +128,9 @@
         <div class="panel-head"><h2>Créer un devis</h2></div>
         <div class="quote-layout">
           <form id="quoteForm" class="quote-form">
-            <div class="form-row">
+            <div class="form-row-3">
               <label>Nom du client<input id="qClientName" required></label>
+              <label>Prénom<input id="qClientFirstName"></label>
               <label>N° de devis<input id="qNumber" readonly placeholder="Génération…"></label>
             </div>
             <div class="form-row">
