@@ -1,12 +1,11 @@
 // ==========================================================
-// CONFIGURATION SUPABASE — À REMPLIR
+// CONFIGURATION SUPABASE
 // ==========================================================
-// 1. Va sur https://supabase.com, crée un projet gratuit.
-// 2. Dans le projet : Settings → API
-//    - Copie "Project URL" ci-dessous dans SUPABASE_URL
-//    - Copie "anon public" key ci-dessous dans SUPABASE_ANON_KEY
-// (Voir SETUP.md pour le guide complet pas à pas.)
+// Déjà rempli avec les clés de ton projet AMDNA. Rien à faire.
+// (Si un jour tu changes de projet Supabase, remplace les deux
+// valeurs ci-dessous par les nouvelles — Settings → API Keys.)
 // ==========================================================
 
-export const SUPABASE_URL = "VOTRE_SUPABASE_URL_ICI";
-export const SUPABASE_ANON_KEY = "VOTRE_SUPABASE_ANON_KEY_ICI";
+export const SUPABASE_URL = "https://xhexsxolrtcqibfymkct.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_ZBgvT_xAQt-UJhHdrQ_Wkw_RM86mvo3";
+

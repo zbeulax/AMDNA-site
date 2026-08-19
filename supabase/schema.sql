@@ -30,12 +30,15 @@ create table if not exists bookings (
 alter table bookings enable row level security;
 
 -- N'importe qui peut créer une réservation (le formulaire du site)
+drop policy if exists "public_insert_bookings" on bookings;
 create policy "public_insert_bookings" on bookings
   for insert to anon with check (true);
 
 -- Seul le compte admin connecté peut lire / modifier les réservations
+drop policy if exists "owner_select_bookings" on bookings;
 create policy "owner_select_bookings" on bookings
   for select to authenticated using (true);
+drop policy if exists "owner_update_bookings" on bookings;
 create policy "owner_update_bookings" on bookings
   for update to authenticated using (true);
 
@@ -50,8 +53,10 @@ create table if not exists taken_slots (
   primary key (date, time)
 );
 alter table taken_slots enable row level security;
+drop policy if exists "public_select_taken_slots" on taken_slots;
 create policy "public_select_taken_slots" on taken_slots
   for select to anon using (true);
+
 
 -- Le créneau n'est bloqué pour les autres clients qu'une fois la demande
 -- CONFIRMÉE par toi dans l'espace admin (statut = 'confirmed'). Une simple
@@ -87,8 +92,10 @@ create table if not exists blocked_dates (
   reason text
 );
 alter table blocked_dates enable row level security;
+drop policy if exists "public_select_blocked_dates" on blocked_dates;
 create policy "public_select_blocked_dates" on blocked_dates
   for select to anon using (true);
+drop policy if exists "owner_manage_blocked_dates" on blocked_dates;
 create policy "owner_manage_blocked_dates" on blocked_dates
   for all to authenticated using (true) with check (true);
 
@@ -109,6 +116,7 @@ create table if not exists quotes (
   notes text
 );
 alter table quotes enable row level security;
+drop policy if exists "owner_manage_quotes" on quotes;
 create policy "owner_manage_quotes" on quotes
   for all to authenticated using (true) with check (true);
 
@@ -126,12 +134,16 @@ create table if not exists reviews (
 );
 alter table reviews enable row level security;
 
+drop policy if exists "public_insert_review" on reviews;
 create policy "public_insert_review" on reviews
   for insert to anon with check (approved = false);
+drop policy if exists "public_select_approved_reviews" on reviews;
 create policy "public_select_approved_reviews" on reviews
   for select to anon using (approved = true);
+drop policy if exists "owner_select_all_reviews" on reviews;
 create policy "owner_select_all_reviews" on reviews
   for select to authenticated using (true);
+drop policy if exists "owner_update_reviews" on reviews;
 create policy "owner_update_reviews" on reviews
   for update to authenticated using (true);
 
@@ -147,6 +159,37 @@ alter table bookings add column if not exists photos jsonb default '[]';
 alter table bookings add column if not exists protection_option text;
 alter table bookings add column if not exists location_mode text;
 alter table bookings add column if not exists vehicle_category text;
+alter table bookings add column if not exists manual_entry boolean default false;
+alter table quotes add column if not exists status text default 'pending';
+alter table quotes add column if not exists vat_labor boolean default false;
+alter table quotes add column if not exists vat_produit boolean default false;
+alter table quotes add column if not exists vat_amount numeric default 0;
+alter table quotes add column if not exists total_ttc numeric;
+
+-- ----------------------------------------------------------
+-- 8. Créneaux bloqués manuellement par toi (calendrier planning),
+--    avec heure de début/fin précise.
+-- ----------------------------------------------------------
+create table if not exists manual_blocks (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  date date not null,
+  start_time text not null,
+  end_time text not null,
+  service text,
+  description text,
+  blocked_slots jsonb default '[]'
+);
+alter table manual_blocks enable row level security;
+drop policy if exists "owner_manage_manual_blocks" on manual_blocks;
+create policy "owner_manage_manual_blocks" on manual_blocks
+  for all to authenticated using (true) with check (true);
+
+-- Te permet, une fois connecté à l'admin, de bloquer/libérer directement
+-- des créneaux (utilisé par le calendrier "Planning").
+drop policy if exists "owner_manage_taken_slots" on taken_slots;
+create policy "owner_manage_taken_slots" on taken_slots
+  for all to authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------
 -- 7. Bucket de stockage pour les photos envoyées par les clients

@@ -31,9 +31,11 @@
       <div class="admin-brand"><img src="assets/amDNA-logo.png" alt="AMDNA"><span>Espace pro</span></div>
       <nav class="admin-tabs">
         <button class="tab-btn active" data-tab="planning">Planning</button>
+        <button class="tab-btn" data-tab="clients">Clients</button>
         <button class="tab-btn" data-tab="quotes">Devis</button>
+        <button class="tab-btn" data-tab="revenue">Chiffre d'affaires</button>
+        <button class="tab-btn" data-tab="calc">Calcul</button>
         <button class="tab-btn" data-tab="reviews">Avis</button>
-        <button class="tab-btn" data-tab="blocked">Dates bloquées</button>
       </nav>
       <button class="btn-ghost" id="logoutBtn">Se déconnecter</button>
     </header>
@@ -43,7 +45,44 @@
       <!-- ============ PLANNING / RÉSERVATIONS ============ -->
       <section id="tab-planning" class="tab-panel active">
         <div class="panel-head">
-          <h2>Réservations</h2>
+          <h2>Planning</h2>
+          <div class="week-nav">
+            <button type="button" class="btn-ghost small" id="prevWeek">←</button>
+            <span id="weekLabel" class="week-label"></span>
+            <button type="button" class="btn-ghost small" id="nextWeek">→</button>
+            <button type="button" class="btn-ghost small" id="todayWeek">Aujourd'hui</button>
+          </div>
+        </div>
+
+        <div class="cal-legend">
+          <span><i class="dot booking"></i> Réservation client</span>
+          <span><i class="dot block"></i> Créneau bloqué par vous</span>
+        </div>
+
+        <div class="calendar-grid-wrap">
+          <div class="calendar-grid" id="calendarGridWeek"></div>
+        </div>
+
+        <div class="job-form-wrap">
+          <h3>Bloquer un créneau</h3>
+          <p class="revenue-note" style="margin:0 0 16px">Choisis une date, une heure de début et de fin — les clients ne pourront plus réserver sur cette plage sur le site.</p>
+          <form id="jobForm" class="job-form">
+            <label>Date<input type="date" id="jobDate" required></label>
+            <label>Début<input type="time" id="jobStart" value="09:00" required></label>
+            <label>Fin<input type="time" id="jobEnd" value="12:00" required></label>
+            <label>Service
+              <select id="jobService"><option value="nautic">Nautic</option><option value="auto">Auto</option></select>
+            </label>
+            <label>Description<input id="jobDesc" placeholder="Ex. Chantier bateau — M. Dupont" required></label>
+            <button class="btn-primary" type="submit">Bloquer ce créneau</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============ CLIENTS ============ -->
+      <section id="tab-clients" class="tab-panel">
+        <div class="panel-head">
+          <h2>Données clients</h2>
           <div class="filter-row">
             <select id="filterStatus">
               <option value="">Tous les statuts</option>
@@ -83,7 +122,7 @@
           <form id="quoteForm" class="quote-form">
             <div class="form-row">
               <label>Nom du client<input id="qClientName" required></label>
-              <label>N° de devis<input id="qNumber" placeholder="AUTO"></label>
+              <label>N° de devis<input id="qNumber" readonly placeholder="Génération…"></label>
             </div>
             <div class="form-row">
               <label>E-mail<input id="qClientEmail" type="email"></label>
@@ -95,14 +134,35 @@
             </label>
 
             <div class="items-head">
-              <span>Description</span><span>Qté</span><span>Prix unitaire (€)</span><span></span>
+              <span>Description</span><span id="qtyHeadLabel">Qté</span><span>Prix unitaire (€)</span><span>Total</span><span></span>
             </div>
             <div id="quoteItems"></div>
             <button type="button" class="btn-ghost small" id="addItem">+ Ajouter une ligne</button>
 
-            <label>Notes / conditions<textarea id="qNotes" rows="3" placeholder="Validité du devis, modalités de paiement..."></textarea></label>
+            <label>Notes / conditions<textarea id="qNotes" rows="6">Validité du devis
+Le présent devis est valable pendant une durée de 30 jours à compter de sa date d'émission. Passé ce délai, les tarifs et conditions indiqués pourront être révisés.
 
-            <div class="quote-total">Total : <strong id="quoteTotal">0,00 €</strong></div>
+Modalités de paiement
+Un acompte de 30 % du montant total du devis est demandé à la signature du devis afin de confirmer la commande et de planifier l'intervention. Le solde de 70 % est payable à la livraison du chantier, à l'achèvement des prestations prévues au présent devis.</textarea></label>
+
+            <div class="vat-toggles">
+              <label class="vat-toggle">
+                <input type="checkbox" id="vatLaborToggle" disabled>
+                <span>TVA main-d'œuvre (+20%)</span>
+              </label>
+              <p class="vat-note" id="vatLaborNote"></p>
+              <label class="vat-toggle">
+                <input type="checkbox" id="vatProduitToggle" disabled>
+                <span>TVA produit (+20%)</span>
+              </label>
+              <p class="vat-note" id="vatProduitNote"></p>
+            </div>
+
+            <div class="quote-totals">
+              <div class="qt-row"><span>Total HT</span><strong id="quoteTotalHT">0,00 €</strong></div>
+              <div class="qt-row" id="quoteTvaRow" hidden><span id="quoteTvaLabel">TVA</span><strong id="quoteTva">0,00 €</strong></div>
+              <div class="qt-row total" id="quoteTtcRow" hidden><span>Total TTC</span><strong id="quoteTotalTTC">0,00 €</strong></div>
+            </div>
 
             <div class="quote-actions">
               <button type="button" class="btn-ghost" id="saveQuote">Enregistrer</button>
@@ -110,9 +170,130 @@
             </div>
           </form>
 
-          <div class="quote-list">
-            <h3>Devis enregistrés</h3>
-            <div id="quotesHistory"></div>
+          <div class="quote-side">
+            <div id="editQuoteBanner" class="edit-quote-banner" hidden>
+              <span>Modification d'un devis existant</span>
+              <button type="button" class="btn-ghost small" id="cancelEditQuote">Annuler / nouveau devis</button>
+            </div>
+            <div class="quote-list">
+              <h3>Devis enregistrés</h3>
+              <div id="quotesHistory"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CHIFFRE D'AFFAIRES ============ -->
+      <section id="tab-revenue" class="tab-panel">
+        <div class="panel-head">
+          <h2>Chiffre d'affaires</h2>
+          <select id="revenueYear"></select>
+        </div>
+        <div class="calc-switch">
+          <button type="button" class="calc-switch-btn active" data-revenue="labor">Nettoyage</button>
+          <button type="button" class="calc-switch-btn" data-revenue="produit">Vente produit</button>
+        </div>
+        <p class="revenue-note">Calculé à partir des lignes "main-d'œuvre" ou "produit" de tes devis acceptés, et des réservations confirmées avec prix (comptées en nettoyage), classés par mois.</p>
+        <div class="revenue-grid" id="revenueGrid"></div>
+        <div class="revenue-year-total">
+          <span id="revenueYearTotalLabel">Total nettoyage sur l'année</span>
+          <strong id="revenueYearTotal">0,00 €</strong>
+        </div>
+        <div class="threshold-bar-wrap">
+          <div class="threshold-bar-title">Plafond micro-entreprise</div>
+          <div class="threshold-bar-track">
+            <div class="threshold-bar-fill" id="revenueThresholdFill"></div>
+          </div>
+          <div class="threshold-bar-labels">
+            <span>0 €</span>
+            <span id="revenueThresholdText">0 € / 83 600 €</span>
+            <span id="revenueThresholdMax">83 600 €</span>
+          </div>
+        </div>
+        <div class="threshold-bar-wrap">
+          <div class="threshold-bar-title">Seuil de franchise en base de TVA</div>
+          <div class="threshold-bar-track">
+            <div class="threshold-bar-fill vat" id="revenueVatFill"></div>
+          </div>
+          <div class="threshold-bar-labels">
+            <span>0 €</span>
+            <span id="revenueVatText">0 € / 37 500 €</span>
+            <span id="revenueVatMax">37 500 €</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CALCUL DES CHARGES ============ -->
+      <section id="tab-calc" class="tab-panel">
+        <div class="panel-head"><h2>Calcul des charges</h2></div>
+        <div class="calc-switch">
+          <button type="button" class="calc-switch-btn active" data-calc="labor">Calcul main-d'œuvre</button>
+          <button type="button" class="calc-switch-btn" data-calc="product">Calcul produit</button>
+          <button type="button" class="calc-switch-btn" data-calc="vat">Calcul TVA</button>
+        </div>
+
+        <div class="calc-panel active" id="calc-labor">
+          <div class="calc-columns">
+            <div class="calc-col-main">
+              <label class="calc-input-label">Montant encaissé (€)
+                <input type="number" min="0" step="0.01" id="calcLaborInput" placeholder="Ex. 300">
+              </label>
+              <div class="calc-table" id="calcLaborTable"></div>
+            </div>
+            <div class="calc-col-side">
+              <div class="calc-result-box profit">
+                <span>Bénéfice net</span>
+                <strong id="calcLaborProfit">0,00 €</strong>
+              </div>
+              <div class="calc-result-box side">
+                <span>Mettre de côté</span>
+                <strong id="calcLaborSide">0,00 €</strong>
+                <div class="calc-side-detail" id="calcLaborSideDetail"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-panel" id="calc-product">
+          <div class="calc-columns">
+            <div class="calc-col-main">
+              <label class="calc-input-label">Montant encaissé (€)
+                <input type="number" min="0" step="0.01" id="calcProductInput" placeholder="Ex. 20">
+              </label>
+              <div class="calc-table" id="calcProductTable"></div>
+            </div>
+            <div class="calc-col-side">
+              <div class="calc-result-box profit">
+                <span>Bénéfice net</span>
+                <strong id="calcProductProfit">0,00 €</strong>
+              </div>
+              <div class="calc-result-box side">
+                <span>Mettre de côté</span>
+                <strong id="calcProductSide">0,00 €</strong>
+                <div class="calc-side-detail" id="calcProductSideDetail"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-panel" id="calc-vat">
+          <div class="calc-columns">
+            <div class="calc-col-main">
+              <label class="calc-input-label">Montant HT saisi (€)
+                <input type="number" min="0" step="0.01" id="calcVatInput" placeholder="Ex. 100">
+              </label>
+              <div class="calc-table" id="calcVatTable"></div>
+            </div>
+            <div class="calc-col-side">
+              <div class="calc-result-box profit">
+                <span>Prix final TTC</span>
+                <strong id="calcVatFinal">0,00 €</strong>
+              </div>
+              <div class="calc-result-box vat">
+                <span>TVA à facturer</span>
+                <strong id="calcVatAmount">0,00 €</strong>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -127,18 +308,15 @@
         <div id="approvedReviews" class="reviews-admin-grid"></div>
       </section>
 
-      <!-- ============ DATES BLOQUÉES ============ -->
-      <section id="tab-blocked" class="tab-panel">
-        <div class="panel-head"><h2>Bloquer une date</h2></div>
-        <form id="blockForm" class="block-form">
-          <label>Date<input type="date" id="blockDate" required></label>
-          <label>Raison (facultatif)<input id="blockReason" placeholder="Congés, jour férié..."></label>
-          <button class="btn-primary" type="submit">Bloquer cette date</button>
-        </form>
-        <div id="blockedList" class="blocked-list"></div>
-      </section>
-
     </main>
+  </div>
+
+  <div id="eventDetail" class="photo-viewer" hidden>
+    <div class="photo-viewer-backdrop" id="closeEventDetail"></div>
+    <div class="photo-viewer-card" style="max-width:440px">
+      <button class="btn-ghost small" id="closeEventDetailBtn" style="position:absolute;top:16px;right:16px">Fermer ×</button>
+      <div id="eventDetailBody"></div>
+    </div>
   </div>
 
   <div id="photoViewer" class="photo-viewer" hidden>
