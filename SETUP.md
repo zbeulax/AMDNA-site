@@ -276,7 +276,48 @@ automatique dès le lendemain.
 Dans les deux cas, une seule des deux méthodes suffit — inutile de
 configurer les deux en même temps.
 
-## 10. Limites à connaître
+## 10. Assistant virtuel (chatbot) sur le site
+
+Une bulle orange en bas à droite du site répond aux clients 24h/24 :
+prestations, fonctionnement, déplacement, réservation. Elle ne donne
+**jamais de prix pour le nautique** (tout est sur devis) et rappelle
+toujours que le prix auto dépend de l'état du véhicule.
+
+Tout se fait depuis le site de Supabase, sans terminal :
+
+1. **Crée ta clé API Claude** : va sur https://console.anthropic.com,
+   crée un compte, ajoute un moyen de paiement (Billing → par ex. 10 €
+   de crédit, largement suffisant pour des mois), puis
+   **API Keys → Create Key**. Copie la clé (elle commence par `sk-ant-`).
+   Conseil : dans **Limits**, fixe une limite de dépense mensuelle
+   (ex. 10 $) pour ne jamais avoir de surprise.
+2. **Ajoute la clé dans Supabase** : ton projet → **Edge Functions** →
+   **Secrets** → Add new secret :
+   - Name : `ANTHROPIC_API_KEY`
+   - Value : ta clé `sk-ant-...`
+3. **Crée la fonction** : **Edge Functions** → **Deploy a new function**
+   → **Via Editor**. Nomme-la exactement `chat-assistant`, efface le code
+   d'exemple, colle tout le contenu du fichier
+   `supabase/functions/chat-assistant/index.ts`, puis **Deploy**.
+4. **Désactive la vérification JWT** : ouvre la fonction
+   `chat-assistant` → **Details** (ou Settings) → désactive
+   **Enforce JWT Verification / Verify JWT** → Save.
+5. **Mets en ligne** les fichiers du site modifiés : `index.html`,
+   `chat.js` et `chat.css` (à côté des autres).
+
+Pour tester : ouvre le site, clique sur la bulle orange et pose une
+question. Si l'assistant répond « petit souci technique », vérifie les
+étapes 2 à 4.
+
+**Modifier ce que dit l'assistant** (nouvelle prestation, nouveau prix,
+horaires…) : tout est écrit en français en haut du fichier
+`supabase/functions/chat-assistant/index.ts` (partie `SYSTEM_PROMPT`).
+Modifie le texte, puis recolle-le dans l'éditeur Supabase et **Deploy**.
+
+**Coût** : l'assistant utilise le modèle Claude le plus économique, soit
+quelques centimes pour une centaine de conversations.
+
+## 11. Limites à connaître
 
 - **Pas de paiement en ligne intégré** : le suivi "payé / impayé" est un
   simple statut que tu coches toi-même dans l'admin, il n'y a pas de
